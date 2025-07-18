@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raksha+: Safety App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#6366f1',
+                            dark: '#4f46e5'
+                        },
+                        danger: {
+                            light: '#ef4444',
+                            dark: '#dc2626'
+                        },
+                        safe: {
+                            light: '#10b981',
+                            dark: '#059669'
+                        },
+                        warning: {
+                            light: '#f59e0b',
+                            dark: '#d97706'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles that can't be done with Tailwind */
+        .map-container {
+            height: 300px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNwYXR0ZXJuKSIvPjwvc3ZnPg==');
+        }
+        
+        .sos-button {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Dark mode toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4f46e5;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-full">
+    <div class="container mx-auto px-4 py-6 max-w-md min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <div class="flex items-center">
+                <div class="w-10 h-10 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h1 class="text-2xl font-bold">Raksha<span class="text-primary-light dark:text-primary-dark">+</span></h1>
+            </div>
+            <div class="flex items-center">
+                <span class="mr-2 text-sm"><i class="fas fa-moon"></i></span>
+                <label class="switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="ml-2 text-sm"><i class="fas fa-sun"></i></span>
+            </div>
+        </header>
+        
+        <!-- Main Content Area -->
+        <main class="flex-1">
+            <!-- Tab Navigation -->
+            <div class="flex justify-around mb-6 bg-white dark:bg-gray-800 rounded-lg p-1">
+                <button class="tab-btn py-2 px-4 rounded-lg font-medium flex-1 text-center" data-tab="home">
+                    <i class="fas fa-home mr-2"></i>Home
+                </button>
+                <button class="tab-btn py-2 px-4 rounded-lg font-medium flex-1 text-center" data-tab="map">
+                    <i class="fas fa-map mr-2"></i>Map
+                </button>
+                <button class="tab-btn py-2 px-4 rounded-lg font-medium flex-1 text-center" data-tab="contacts">
+                    <i class="fas fa-users mr-2"></i>Contacts
+                </button>
+                <button class="tab-btn py-2 px-4 rounded-lg font-medium flex-1 text-center" data-tab="history">
+                    <i class="fas fa-history mr-2"></i>History
+                </button>
+            </div>
+            
+            <!-- Tab Contents -->
+            <div class="tab-content active" id="home-tab">
+                <!-- Safety Status Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Your Safety Status</h2>
+                        <span id="safetyStatus" class="px-3 py-1 rounded-full text-sm font-medium bg-safe-light dark:bg-safe-dark text-white">Safe</span>
+                    </div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-map-marker-alt text-primary-light dark:text-primary-dark mr-2"></i>
+                        <span id="currentLocation">Fetching location...</span>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Last updated: <span id="lastUpdated">Just now</span></p>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+                        <p class="text-sm"><i class="fas fa-info-circle text-primary-light dark:text-primary-dark mr-2"></i>Your current location is in a safe zone with low crime reports.</p>
+                    </div>
+                </div>
+                
+                <!-- Emergency Buttons -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button id="voiceSOS" class="bg-warning-light dark:bg-warning-dark text-white py-4 rounded-xl flex flex-col items-center justify-center">
+                        <i class="fas fa-microphone text-2xl mb-2"></i>
+                        <span>Voice SOS</span>
+                        <small class="text-xs opacity-80">Say "Help me"</small>
+                    </button>
+                    <button id="panicButton" class="sos-button bg-danger-light dark:bg-danger-dark text-white py-4 rounded-xl flex flex-col items-center justify-center">
+                        <i class="fas fa-bell text-2xl mb-2"></i>
+                        <span>Panic Button</span>
+                        <small class="text-xs opacity-80">Hold for 3s</small>
+                    </button>
+                </div>
+                
+                <!-- AI Assistant -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h2 class="text-xl font-bold">Raksha AI</h2>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                        <p class="text-sm">Hello! I'm your safety assistant. I'll check in with you if I detect anything unusual.</p>
+                    </div>
+                    <div class="flex">
+                        <input type="text" placeholder="Ask me anything..." class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-l-lg px-4 py-2 text-sm focus:outline-none">
+                        <button class="bg-primary-light dark:bg-primary-dark text-white px-4 rounded-r-lg">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Quick Tips -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Safety Tips</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <div class="w-6 h-6 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3 mt-1 flex-shrink-0">
+                                <i class="fas fa-lightbulb text-xs"></i>
+                            </div>
+                            <p class="text-sm">Share your live location with trusted contacts when traveling alone at night.</p>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-6 h-6 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3 mt-1 flex-shrink-0">
+                                <i class="fas fa-lightbulb text-xs"></i>
+                            </div>
+                            <p class="text-sm">Avoid displaying expensive items in public places.</p>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-6 h-6 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3 mt-1 flex-shrink-0">
+                                <i class="fas fa-lightbulb text-xs"></i>
+                            </div>
+                            <p class="text-sm">Trust your instincts - if something feels wrong, it probably is.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Map Tab -->
+            <div class="tab-content" id="map-tab">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold mb-4">Safety Map</h2>
+                    <div class="map-container rounded-lg mb-4 relative">
+                        <!-- This would be a real map in production -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-map-marked-alt text-4xl text-primary-light dark:text-primary-dark mb-2"></i>
+                                <p class="text-sm">Interactive safety map</p>
+                            </div>
+                        </div>
+                        <!-- Safe/Unsafe zone indicators -->
+                        <div class="absolute top-4 left-4 w-4 h-4 rounded-full bg-safe-light dark:bg-safe-dark border-2 border-white"></div>
+                        <div class="absolute top-16 right-8 w-4 h-4 rounded-full bg-safe-light dark:bg-safe-dark border-2 border-white"></div>
+                        <div class="absolute bottom-12 left-12 w-4 h-4 rounded-full bg-danger-light dark:bg-danger-dark border-2 border-white"></div>
+                        <div class="absolute bottom-24 right-16 w-4 h-4 rounded-full bg-warning-light dark:bg-warning-dark border-2 border-white"></div>
+                    </div>
+                    <div class="flex justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-safe-light dark:bg-safe-dark mr-2"></div>
+                            <span class="text-sm">Safe Zone</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-warning-light dark:bg-warning-dark mr-2"></div>
+                            <span class="text-sm">Caution Zone</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-danger-light dark:bg-danger-dark mr-2"></div>
+                            <span class="text-sm">Danger Zone</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                        <p class="text-sm"><i class="fas fa-info-circle text-primary-light dark:text-primary-dark mr-2"></i>Red zones indicate high crime areas. Avoid these routes when possible.</p>
+                    </div>
+                    <button class="w-full bg-primary-light dark:bg-primary-dark text-white py-3 rounded-lg font-medium">
+                        <i class="fas fa-route mr-2"></i>Get Safest Route
+                    </button>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Predictive Alerts</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-warning-light dark:bg-warning-dark flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                <i class="fas fa-exclamation"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Unusual Activity Detected</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">You're approaching a high-risk area. Consider an alternative route.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Late Night Alert</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">It's getting late. Would you like to share your location with emergency contacts?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contacts Tab -->
+            <div class="tab-content" id="contacts-tab">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold">Emergency Contacts</h2>
+                        <button id="addContactBtn" class="bg-primary-light dark:bg-primary-dark text-white p-2 rounded-full">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4" id="contactsList">
+                        <!-- Contact items will be added here dynamically -->
+                        <div class="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Priya Sharma</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">+91 98765 43210</p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-danger-light dark:text-danger-dark">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Rahul Verma</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">+91 87654 32109</p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-danger-light dark:text-danger-dark">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add Contact Modal (hidden by default) -->
+                <div id="addContactModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold">Add New Contact</h3>
+                            <button id="closeModalBtn" class="text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Name</label>
+                                <input type="text" id="contactName" class="w-full bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Phone Number</label>
+                                <input type="tel" id="contactPhone" class="w-full bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Relationship</label>
+                                <select id="contactRelationship" class="w-full bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark">
+                                    <option value="family">Family</option>
+                                    <option value="friend">Friend</option>
+                                    <option value="colleague">Colleague</option>
+                                    <option value="neighbor">Neighbor</option>
+                                </select>
+                            </div>
+                            <button id="saveContactBtn" class="w-full bg-primary-light dark:bg-primary-dark text-white py-3 rounded-lg font-medium">
+                                Save Contact
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Voice SOS Settings</h2>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Activation Phrase</label>
+                        <input type="text" value="help me" class="w-full bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Emergency Message</label>
+                        <textarea class="w-full bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark" rows="3">I need help! My current location is: [LOCATION]. Please check on me immediately.</textarea>
+                    </div>
+                    <button class="w-full bg-primary-light dark:bg-primary-dark text-white py-3 rounded-lg font-medium">
+                        <i class="fas fa-save mr-2"></i>Save Settings
+                    </button>
+                </div>
+            </div>
+            
+            <!-- History Tab -->
+            <div class="tab-content" id="history-tab">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold mb-4">Safety History</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-danger-light dark:bg-danger-dark flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                <i class="fas fa-exclamation"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Panic Alert Activated</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Today, 10:15 PM • Near Central Park</p>
+                                <p class="text-sm mt-1">Emergency contacts were notified with your live location.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-warning-light dark:bg-warning-dark flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Entered Caution Zone</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Yesterday, 8:30 PM • Market Street</p>
+                                <p class="text-sm mt-1">You spent 15 minutes in a medium-risk area.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Safety Check-in</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Yesterday, 11:45 PM • At Home</p>
+                                <p class="text-sm mt-1">Raksha AI confirmed you arrived safely at your destination.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-safe-light dark:bg-safe-dark flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Safe Route Taken</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">2 days ago, 7:15 PM • From Office to Home</p>
+                                <p class="text-sm mt-1">You followed the recommended safe path.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Safety Statistics</h2>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center">
+                            <p class="text-2xl font-bold">12</p>
+                            <p class="text-sm">Safe Days</p>
+                        </div>
+                        <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center">
+                            <p class="text-2xl font-bold">2</p>
+                            <p class="text-sm">Alerts</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+                        <p class="text-sm font-medium mb-2">Your Safety Score: <span class="text-safe-light dark:text-safe-dark">85/100</span></p>
+                        <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2.5">
+                            <div class="bg-safe-light dark:bg-safe-dark h-2.5 rounded-full" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+            <p>Raksha+ © 2023 - Your Safety Companion</p>
+        </footer>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                
+                // Remove active class from all buttons and contents
+                tabButtons.forEach(btn => btn.classList.remove('bg-primary-light', 'dark:bg-primary-dark', 'text-white'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding content
+                button.classList.add('bg-primary-light', 'dark:bg-primary-dark', 'text-white');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+        
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const htmlElement = document.documentElement;
+        
+        // Check for saved user preference or use system preference
+        if (localStorage.getItem('darkMode') === 'true' || 
+            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlElement.classList.add('dark');
+            darkModeToggle.checked = true;
+        }
+        
+        darkModeToggle.addEventListener('change', () => {
+            if (darkModeToggle.checked) {
+                htmlElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                htmlElement.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+            }
+        });
+        
+        // Simulate getting current location
+        function updateLocation() {
+            const locations = [
+                "123 Safe Street, Bangalore",
+                "456 Peace Avenue, Mumbai",
+                "789 Harmony Road, Delhi",
+                "321 Tranquil Lane, Hyderabad"
+            ];
+            const safetyStatuses = ["Safe", "Caution", "Danger"];
+            const statusClasses = {
+                "Safe": "bg-safe-light dark:bg-safe-dark",
+                "Caution": "bg-warning-light dark:bg-warning-dark",
+                "Danger": "bg-danger-light dark:bg-danger-dark"
+            };
+            
+            const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+            const randomStatus = safetyStatuses[Math.floor(Math.random() * safetyStatuses.length)];
+            
+            document.getElementById('currentLocation').textContent = randomLocation;
+            document.getElementById('safetyStatus').textContent = randomStatus;
+            document.getElementById('safetyStatus').className = `px-3 py-1 rounded-full text-sm font-medium text-white ${statusClasses[randomStatus]}`;
+            
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = now.toLocaleTimeString();
+        }
+        
+        // Update location every 30 seconds (simulated)
+        updateLocation();
+        setInterval(updateLocation, 30000);
+        
+        // Panic button functionality
+        const panicButton = document.getElementById('panicButton');
+        let panicTimer;
+        
+        panicButton.addEventListener('mousedown', () => {
+            panicTimer = setTimeout(() => {
+                alert('Emergency alert sent to your contacts with your live location!');
+            }, 3000);
+        });
+        
+        panicButton.addEventListener('mouseup', () => {
+            clearTimeout(panicTimer);
+        });
+        
+        panicButton.addEventListener('touchstart', () => {
+            panicTimer = setTimeout(() => {
+                alert('Emergency alert sent to your contacts with your live location!');
+            }, 3000);
+        });
+        
+        panicButton.addEventListener('touchend', () => {
+            clearTimeout(panicTimer);
+        });
+        
+        // Voice SOS button
+        document.getElementById('voiceSOS').addEventListener('click', () => {
+            alert('Listening for activation phrase... Say "Help me" to trigger emergency alert.');
+        });
+        
+        // Contact management
+        const addContactBtn = document.getElementById('addContactBtn');
+        const addContactModal = document.getElementById('addContactModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const saveContactBtn = document.getElementById('saveContactBtn');
+        const contactsList = document.getElementById('contactsList');
+        
+        addContactBtn.addEventListener('click', () => {
+            addContactModal.classList.remove('hidden');
+        });
+        
+        closeModalBtn.addEventListener('click', () => {
+            addContactModal.classList.add('hidden');
+        });
+        
+        saveContactBtn.addEventListener('click', () => {
+            const name = document.getElementById('contactName').value;
+            const phone = document.getElementById('contactPhone').value;
+            const relationship = document.getElementById('contactRelationship').value;
+            
+            if (name && phone) {
+                const contactItem = document.createElement('div');
+                contactItem.className = 'flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg';
+                contactItem.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">${name}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">${phone}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="text-danger-light dark:text-danger-dark">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                contactsList.prepend(contactItem);
+                addContactModal.classList.add('hidden');
+                
+                // Clear form
+                document.getElementById('contactName').value = '';
+                document.getElementById('contactPhone').value = '';
+                document.getElementById('contactRelationship').value = 'family';
+                
+                // Add event listener to delete button
+                contactItem.querySelector('button').addEventListener('click', () => {
+                    contactItem.remove();
+                });
+            } else {
+                alert('Please fill in all fields');
+            }
+        });
+        
+        // Add delete functionality to existing contacts
+        document.querySelectorAll('#contactsList .fa-trash').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('.flex.items-center.justify-between').remove();
+            });
+        });
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=TanishkSuvarna/raksha-safety-app" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>
