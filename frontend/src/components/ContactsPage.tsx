@@ -50,7 +50,7 @@ const ContactsPage: React.FC = () => {
   };
 
   const deleteContact = async (contactId: string) => {
-    if (!confirm('Are you sure you want to delete this contact?')) return;
+    if (!window.confirm('Are you sure you want to delete this contact?')) return;
 
     try {
       await api.delete(`/api/contacts/${contactId}`);
