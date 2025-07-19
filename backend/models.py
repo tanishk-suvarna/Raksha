@@ -45,7 +45,7 @@ class LocationData(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 # Alert Models
-class AlertType(BaseModel):
+class AlertType:
     PANIC_BUTTON = "panic_button"
     VOICE_SOS = "voice_sos"
     PREDICTIVE = "predictive"
